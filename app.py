@@ -1,3 +1,8 @@
+import streamlit as st
+import pandas as pd
+import io
+
+# Define the generate_caption function (unchanged from your original)
 def generate_caption(row):
     lines = []
     lines.append("No brokerage offer 🥳🥳🥳")
@@ -62,3 +67,54 @@ def generate_caption(row):
     lines.append(f"For more details visit: {row.get('Property-Link','')}")
     lines.append("#propertytour #cleardeals.ahmedabad.west #cleardeals.ahmedabad.east #cleardeals.Pune cleardeals.gandhinagar #trendyproperty #ahmedabadrealestate #punerealestate #trending #trendingreels #viralreels #Newproperty")
     return "\n".join(lines)
+
+# Streamlit app
+st.set_page_config(page_title="Instagram Caption Generator", layout="wide")
+st.title("Instagram Caption Generator")
+st.write("Upload a CSV file to generate Instagram captions for properties.")
+
+# Debug statement to confirm code reaches this point
+st.write("Debug: File uploader is about to render...")
+
+# File uploader
+uploaded_file = st.file_uploader("Upload your CSV file", type=["csv"], help="Upload a CSV with property details.")
+
+if uploaded_file is not None:
+    try:
+        # Read the uploaded CSV file
+        df = pd.read_csv(uploaded_file)
+        
+        # Validate required columns (optional, but good for robustness)
+        expected_columns = [
+            'Property_Type', 'Commercial-Property-Type', 'Residential-Property', 'Location', 'City1',
+            'BHK', 'Super-Built-up-Plot-Space', 'Super-Built-up-Construction-Area', 'Furniture-Details',
+            'Current-Status', 'JRM-Mobile-Number', 'Property-Link'
+        ]
+        missing_cols = [col for col in expected_columns if col not in df.columns]
+        if missing_cols:
+            st.warning(f"Warning: Missing columns in CSV: {', '.join(missing_cols)}. Captions may have incomplete data.")
+        
+        # Generate captions for each row
+        st.subheader("Generated Captions")
+        for index, row in df.iterrows():
+            caption = generate_caption(row)
+            st.markdown(f"**Property {index + 1}:**")
+            st.text_area(f"Caption {index + 1}", caption, height=300)
+            
+        # Option to download captions as a text file
+        captions = [generate_caption(row) for _, row in df.iterrows()]
+        captions_text = "\n\n".join([f"Caption {i+1}:\n{caption}" for i, caption in enumerate(captions)])
+        st.download_button(
+            label="Download All Captions",
+            data=captions_text,
+            file_name="instagram_captions.txt",
+            mime="text/plain"
+        )
+        
+    except Exception as e:
+        st.error(f"Error processing file: {str(e)}")
+        st.write("Please ensure the CSV is properly formatted and try again.")
+else:
+    st.info("Please upload a CSV file to generate captions.")
+
+st.write("Debug: File uploader has rendered.")
